@@ -13,6 +13,7 @@
  * License for the specific language governing permissions and limitations
  * under the License.
  */
+
 package org.mryao.ws;
 
 import io.netty.channel.ChannelInitializer;
@@ -22,31 +23,22 @@ import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
-import io.netty.handler.ssl.SslContext;
+import io.netty.handler.stream.ChunkedWriteHandler;
 
-/**
- */
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
 
     private static final String WEBSOCKET_PATH = "/websocket";
 
-    private final SslContext sslCtx;
-
-    public WebSocketServerInitializer(SslContext sslCtx) {
-        this.sslCtx = sslCtx;
-    }
-
     @Override
-    public void initChannel(SocketChannel ch) throws Exception {
+    public void initChannel(SocketChannel ch) {
         ChannelPipeline pipeline = ch.pipeline();
-        if (sslCtx != null) {
-            pipeline.addLast(sslCtx.newHandler(ch.alloc()));
-        }
-        pipeline.addLast(new HttpServerCodec());
-        pipeline.addLast(new HttpObjectAggregator(65536));
-        pipeline.addLast(new WebSocketServerCompressionHandler());
-        pipeline.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true));
-        pipeline.addLast(new WebSocketIndexPageHandler(WEBSOCKET_PATH));
-        pipeline.addLast(new WebSocketFrameHandler());
+        pipeline
+                .addLast(new HttpServerCodec())
+                .addLast(new ChunkedWriteHandler())
+                .addLast(new HttpObjectAggregator(65536))
+                .addLast(new WebSocketServerCompressionHandler())
+                .addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true))
+                .addLast(new HttpRequestHandler())
+                .addLast(new WebSocketFrameHandler());
     }
 }
