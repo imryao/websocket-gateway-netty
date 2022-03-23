@@ -27,7 +27,7 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
 
-    private static final String WEBSOCKET_PATH = "/websocket";
+    private static final String WEBSOCKET_PATH = "/gw";
 
     @Override
     public void initChannel(SocketChannel ch) {
@@ -38,7 +38,6 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
                 .addLast(new HttpObjectAggregator(65536))
                 .addLast(new WebSocketServerCompressionHandler())
                 .addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true))
-                .addLast(new HttpRequestHandler())
                 .addLast(new WebSocketFrameHandler());
     }
 }

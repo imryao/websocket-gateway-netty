@@ -1,6 +1,4 @@
-FROM centos:7
-RUN curl -SL https://tdmq-1255429582.cos.ap-beijing.myqcloud.com/jdk-17_linux-x64_bin.rpm -o java-17-openjdk.rpm
-RUN yum update -y && yum install -y java-17-openjdk.rpm
+FROM openjdk
 
 # 设置时区。这对于日志、调用链等功能能否在 TSF 控制台被检索到非常重要。
 RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime

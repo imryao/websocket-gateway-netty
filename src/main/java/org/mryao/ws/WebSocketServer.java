@@ -63,7 +63,7 @@ public final class WebSocketServer {
 
             Channel ch = b.bind(PORT).sync().channel();
 
-            log.info("Open your web browser and navigate to http://127.0.0.1:{}/", PORT);
+            log.info("websocket-gateway started");
 
             ch.closeFuture().sync();
         } finally {

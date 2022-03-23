@@ -16,11 +16,19 @@
 
 package org.mryao.ws;
 
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpMethod;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.util.IdUtil;
@@ -29,45 +37,48 @@ import org.mryao.ws.util.IdUtil;
  * Echoes uppercase content of text frames.
  */
 @Slf4j
-public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
+public class WebSocketFrameHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame msg) {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
         String id = ctx.channel().id().asLongText();
         log.info("{} channelRead0", id);
+        // health check
+        if (HttpMethod.HEAD.equals(request.method()) && "/".equals(request.uri())) {
+            sendHttpResponse(ctx, request,
+                    new DefaultFullHttpResponse(request.protocolVersion(), HttpResponseStatus.NO_CONTENT));
+        }
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        super.channelRead(ctx, msg);
         String id = ctx.channel().id().asLongText();
         log.info("{} channelRead", id);
+        if (msg instanceof FullHttpRequest) {
+            super.channelRead(ctx, msg);
+        }
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        super.handlerAdded(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} handlerAdded", id);
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelRegistered(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} channelRegistered", id);
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} channelActive", id);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        super.channelInactive(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} channelInactive", id);
         ChannelManager.removeByValue(ctx.channel());
@@ -75,28 +86,24 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        super.channelUnregistered(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} channelUnregistered", id);
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        super.handlerRemoved(ctx);
         String id = ctx.channel().id().asLongText();
         log.info("{} handlerRemoved", id);
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        super.exceptionCaught(ctx, cause);
         String id = ctx.channel().id().asLongText();
         log.warn("{} exceptionCaught", id, cause);
     }
 
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        super.userEventTriggered(ctx, evt);
         Channel channel = ctx.channel();
         String id = channel.id().asLongText();
         if (evt instanceof HandshakeComplete) {
@@ -104,8 +111,22 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
             String key = IdUtil.getRandomString();
             channel.writeAndFlush(new TextWebSocketFrame(key));
             ChannelManager.put(key, channel);
-        } else {
-            log.info("{} userEventTriggered other", id);
+        }
+    }
+
+    private static void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest req, FullHttpResponse res) {
+        // Generate an error page if response getStatus code is not OK (200).
+        HttpResponseStatus responseStatus = res.status();
+        if (responseStatus.code() != 200) {
+            ByteBufUtil.writeUtf8(res.content(), responseStatus.toString());
+            HttpUtil.setContentLength(res, res.content().readableBytes());
+        }
+        // Send the response and close the connection if necessary.
+        boolean keepAlive = HttpUtil.isKeepAlive(req) && responseStatus.code() == 200;
+        HttpUtil.setKeepAlive(res, keepAlive);
+        ChannelFuture future = ctx.writeAndFlush(res);
+        if (!keepAlive) {
+            future.addListener(ChannelFutureListener.CLOSE);
         }
     }
 }
