@@ -14,7 +14,7 @@ public class JacksonUtil {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (JsonProcessingException e) {
-            throw new JacksonException();
+            throw new JacksonException("JacksonUtil.writeValueAsString error", e);
         }
     }
 }

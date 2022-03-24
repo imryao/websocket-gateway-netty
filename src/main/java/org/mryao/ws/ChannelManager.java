@@ -7,6 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChannelManager {
 
+    public static final String KEY_PATTERN = "[0-9A-Za-z_-]{24}";
+
     private static final Map<String, Channel> channels = new ConcurrentHashMap<>();
 
     public static Channel put(String key, Channel channel) {

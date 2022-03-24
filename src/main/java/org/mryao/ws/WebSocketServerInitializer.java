@@ -24,6 +24,8 @@ import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.handler.stream.ChunkedWriteHandler;
+import io.netty.handler.timeout.IdleStateHandler;
+import java.util.concurrent.TimeUnit;
 
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
 
@@ -36,8 +38,10 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
                 .addLast(new HttpServerCodec())
                 .addLast(new ChunkedWriteHandler())
                 .addLast(new HttpObjectAggregator(65536))
+                .addLast(new HttpRequestHandler(WEBSOCKET_PATH))
                 .addLast(new WebSocketServerCompressionHandler())
                 .addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true))
+                .addLast(new IdleStateHandler(5, 7, 11, TimeUnit.SECONDS))
                 .addLast(new WebSocketFrameHandler());
     }
 }

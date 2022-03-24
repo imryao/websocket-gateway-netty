@@ -16,90 +16,83 @@
 
 package org.mryao.ws;
 
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpMethod;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler.HandshakeComplete;
+import io.netty.handler.timeout.IdleStateEvent;
+import java.util.Locale;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.util.IdUtil;
+import org.slf4j.MDC;
 
 /**
  * Echoes uppercase content of text frames.
  */
 @Slf4j
-public class WebSocketFrameHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelRead0", id);
-        // health check
-        if (HttpMethod.HEAD.equals(request.method()) && "/".equals(request.uri())) {
-            sendHttpResponse(ctx, request,
-                    new DefaultFullHttpResponse(request.protocolVersion(), HttpResponseStatus.NO_CONTENT));
-        }
-    }
+    protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame frame) {
+        // ping and pong frames already handled
 
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelRead", id);
-        if (msg instanceof FullHttpRequest) {
-            super.channelRead(ctx, msg);
+        if (frame instanceof TextWebSocketFrame) {
+            // Send the uppercase string back.
+            String request = ((TextWebSocketFrame) frame).text();
+            ctx.channel().writeAndFlush(new TextWebSocketFrame(request.toUpperCase(Locale.US)));
+        } else {
+            String message = "unsupported frame type: " + frame.getClass().getName();
+            throw new UnsupportedOperationException(message);
         }
     }
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} handlerAdded", id);
+        log.debug("WebSocketFrameHandler.handlerAdded");
     }
 
     @Override
     public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelRegistered", id);
+        log.info("WebSocketFrameHandler.channelRegistered");
     }
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelActive", id);
+        log.info("WebSocketFrameHandler.channelActive");
+    }
+
+//    @Override
+//    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+//        log.info("WebSocketFrameHandler.channelRead");
+//    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        log.info("WebSocketFrameHandler.channelReadComplete");
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelInactive", id);
-        ChannelManager.removeByValue(ctx.channel());
+        String key = ChannelManager.removeByValue(ctx.channel());
+        log.info("WebSocketFrameHandler.channelInactive, removing {}", key);
     }
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} channelUnregistered", id);
+        log.info("WebSocketFrameHandler.channelUnregistered");
     }
 
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.info("{} handlerRemoved", id);
+        log.debug("WebSocketFrameHandler.handlerRemoved");
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        String id = ctx.channel().id().asLongText();
-        log.warn("{} exceptionCaught", id, cause);
+        log.warn("WebSocketFrameHandler.exceptionCaught", cause);
     }
 
     @Override
@@ -107,26 +100,21 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<FullHttpR
         Channel channel = ctx.channel();
         String id = channel.id().asLongText();
         if (evt instanceof HandshakeComplete) {
-            log.info("{} userEventTriggered HandshakeComplete", id);
             String key = IdUtil.getRandomString();
+            MDC.put("channelId", id);
+            MDC.put("channelKey", key);
+            log.info("WebSocketFrameHandler.userEventTriggered HandshakeComplete");
             channel.writeAndFlush(new TextWebSocketFrame(key));
             ChannelManager.put(key, channel);
-        }
-    }
-
-    private static void sendHttpResponse(ChannelHandlerContext ctx, FullHttpRequest req, FullHttpResponse res) {
-        // Generate an error page if response getStatus code is not OK (200).
-        HttpResponseStatus responseStatus = res.status();
-        if (responseStatus.code() != 200) {
-            ByteBufUtil.writeUtf8(res.content(), responseStatus.toString());
-            HttpUtil.setContentLength(res, res.content().readableBytes());
-        }
-        // Send the response and close the connection if necessary.
-        boolean keepAlive = HttpUtil.isKeepAlive(req) && responseStatus.code() == 200;
-        HttpUtil.setKeepAlive(res, keepAlive);
-        ChannelFuture future = ctx.writeAndFlush(res);
-        if (!keepAlive) {
-            future.addListener(ChannelFutureListener.CLOSE);
+        } else if (evt instanceof IdleStateEvent event) {
+            switch (event.state()) {
+                case READER_IDLE -> log.info("READER_IDLE");
+                case WRITER_IDLE -> {
+                    ctx.writeAndFlush(new PingWebSocketFrame());
+                    log.info("WRITER_IDLE");
+                }
+                case ALL_IDLE -> log.info("ALL_IDLE");
+            }
         }
     }
 }

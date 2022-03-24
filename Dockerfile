@@ -1,4 +1,4 @@
-FROM openjdk
+FROM openjdk:18
 
 # 设置时区。这对于日志、调用链等功能能否在 TSF 控制台被检索到非常重要。
 RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
