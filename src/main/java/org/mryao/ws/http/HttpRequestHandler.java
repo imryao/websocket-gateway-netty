@@ -88,7 +88,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
     private void closeChannel(ChannelHandlerContext ctx, boolean keepAlive, String key) {
-        Channel channel = ChannelManager.remove(key);
+        Channel channel = ChannelManager.get(key);
         if (channel == null) {
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
         } else {

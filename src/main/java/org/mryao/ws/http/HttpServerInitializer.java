@@ -9,7 +9,11 @@ import io.netty.handler.stream.ChunkedWriteHandler;
 
 public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
 
-    private static final String CHANNEL_URI_PREFIX = "/channels/";
+    private final String channelUriPrefix;
+
+    public HttpServerInitializer(String channelUriPrefix) {
+        this.channelUriPrefix = channelUriPrefix;
+    }
 
     @Override
     protected void initChannel(SocketChannel ch) throws Exception {
@@ -18,6 +22,6 @@ public class HttpServerInitializer extends ChannelInitializer<SocketChannel> {
                 .addLast(new HttpServerCodec())
                 .addLast(new ChunkedWriteHandler())
                 .addLast(new HttpObjectAggregator(65536))
-                .addLast(new HttpRequestHandler(CHANNEL_URI_PREFIX));
+                .addLast(new HttpRequestHandler(channelUriPrefix));
     }
 }

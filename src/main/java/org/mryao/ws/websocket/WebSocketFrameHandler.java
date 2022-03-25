@@ -46,6 +46,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     @Override
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         String key = ChannelManager.removeByValue(ctx.channel());
+        ctx.close();
         log.info("handlerRemoved {}", key);
         super.handlerRemoved(ctx);
     }
@@ -53,6 +54,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         String key = ChannelManager.removeByValue(ctx.channel());
+        ctx.close();
         log.warn("exceptionCaught {}", key, cause);
         super.exceptionCaught(ctx, cause);
     }

@@ -29,7 +29,11 @@ import java.util.concurrent.TimeUnit;
 
 public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel> {
 
-    private static final String WEBSOCKET_PATH = "/gw";
+    private final String websocketPath;
+
+    public WebSocketServerInitializer(String websocketPath) {
+        this.websocketPath = websocketPath;
+    }
 
     @Override
     public void initChannel(SocketChannel ch) {
@@ -38,9 +42,9 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
                 .addLast(new HttpServerCodec())
                 .addLast(new ChunkedWriteHandler())
                 .addLast(new HttpObjectAggregator(65536))
-                .addLast(new HealthCheckHandler(WEBSOCKET_PATH))
+                .addLast(new HealthCheckHandler(websocketPath))
                 .addLast(new WebSocketServerCompressionHandler())
-                .addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true))
+                .addLast(new WebSocketServerProtocolHandler(websocketPath, null, true))
                 .addLast(new IdleStateHandler(2, 3, 5, TimeUnit.SECONDS))
                 .addLast(new WebSocketFrameHandler());
     }
