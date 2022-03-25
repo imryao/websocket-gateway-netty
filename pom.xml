@@ -54,10 +54,11 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>org.mryao.ws.WebSocketServer</mainClass>
+                            <mainClass>org.mryao.ws.GatewayApplication</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

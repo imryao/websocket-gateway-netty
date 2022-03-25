@@ -14,7 +14,7 @@
  * under the License.
  */
 
-package org.mryao.ws;
+package org.mryao.ws.websocket;
 
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
@@ -38,10 +38,10 @@ public class WebSocketServerInitializer extends ChannelInitializer<SocketChannel
                 .addLast(new HttpServerCodec())
                 .addLast(new ChunkedWriteHandler())
                 .addLast(new HttpObjectAggregator(65536))
-                .addLast(new HttpRequestHandler(WEBSOCKET_PATH))
+                .addLast(new HealthCheckHandler(WEBSOCKET_PATH))
                 .addLast(new WebSocketServerCompressionHandler())
                 .addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH, null, true))
-                .addLast(new IdleStateHandler(5, 7, 11, TimeUnit.SECONDS))
+                .addLast(new IdleStateHandler(2, 3, 5, TimeUnit.SECONDS))
                 .addLast(new WebSocketFrameHandler());
     }
 }
