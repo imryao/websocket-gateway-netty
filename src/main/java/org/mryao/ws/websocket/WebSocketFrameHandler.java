@@ -27,6 +27,7 @@ import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
+import org.mryao.ws.MessageTypeEnum;
 import org.mryao.ws.util.IdUtil;
 
 @Sharable
@@ -67,7 +68,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
             String key = IdUtil.getRandomString();
             Channel channel = ctx.channel();
             ChannelManager.put(key, channel);
-            ctx.writeAndFlush(new TextWebSocketFrame(key));
+            ChannelManager.sendMessage(channel, MessageTypeEnum.KEY, key);
             log.info("HandshakeComplete {}", key);
         } else if (evt instanceof IdleStateEvent event) {
             switch (event.state()) {

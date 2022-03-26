@@ -1,9 +1,12 @@
 package org.mryao.ws;
 
 import io.netty.channel.Channel;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.util.AttributeKey;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.mryao.ws.util.JacksonUtil;
+import org.mryao.ws.view.Message;
 
 public class ChannelManager {
 
@@ -43,5 +46,10 @@ public class ChannelManager {
             }
         }
         return null;
+    }
+
+    public static void sendMessage(Channel channel, MessageTypeEnum type, String data) {
+        Message message = new Message(type.getCode(), data);
+        channel.writeAndFlush(new TextWebSocketFrame(JacksonUtil.writeValueAsString(message)));
     }
 }

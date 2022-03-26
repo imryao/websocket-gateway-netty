@@ -10,11 +10,11 @@ import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
+import org.mryao.ws.MessageTypeEnum;
 import org.mryao.ws.util.HttpResponseUtil;
 
 @Sharable
@@ -62,7 +62,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         ctx.close();
         log.warn("exceptionCaught", cause);
     }
@@ -84,7 +84,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             if (channel == null) {
                 HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
             } else {
-                channel.writeAndFlush(new TextWebSocketFrame(message));
+                ChannelManager.sendMessage(channel, MessageTypeEnum.DATA, message);
                 HttpResponseUtil.respond204(ctx, keepAlive);
             }
         }
