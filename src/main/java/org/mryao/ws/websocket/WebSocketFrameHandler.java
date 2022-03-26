@@ -25,6 +25,7 @@ import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketFrame;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.timeout.IdleStateEvent;
+import java.net.InetSocketAddress;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
 import org.mryao.ws.MessageTypeEnum;
@@ -69,7 +70,10 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
             Channel channel = ctx.channel();
             ChannelManager.put(key, channel);
             ChannelManager.sendMessage(channel, MessageTypeEnum.KEY, key);
-            log.info("HandshakeComplete {}", key);
+            InetSocketAddress remoteAddress = (InetSocketAddress) channel.remoteAddress();
+            String ip = remoteAddress.getAddress().getHostAddress();
+            int port = remoteAddress.getPort();
+            log.info("HandshakeComplete {} from {}:{}", key, ip, port);
         } else if (evt instanceof IdleStateEvent event) {
             switch (event.state()) {
                 case READER_IDLE -> log.info("READER_IDLE");
