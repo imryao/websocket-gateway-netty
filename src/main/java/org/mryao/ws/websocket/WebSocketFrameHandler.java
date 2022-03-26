@@ -17,6 +17,7 @@
 package org.mryao.ws.websocket;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.websocketx.PingWebSocketFrame;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
 import org.mryao.ws.util.IdUtil;
 
+@Sharable
 @Slf4j
 public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocketFrame> {
 
@@ -62,8 +64,8 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
-            Channel channel = ctx.channel();
             String key = IdUtil.getRandomString();
+            Channel channel = ctx.channel();
             ChannelManager.put(key, channel);
             ctx.writeAndFlush(new TextWebSocketFrame(key));
             log.info("HandshakeComplete {}", key);

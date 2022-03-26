@@ -3,6 +3,7 @@ package org.mryao.ws.http;
 import static org.mryao.ws.ChannelManager.KEY_PATTERN;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
 import org.mryao.ws.util.HttpResponseUtil;
 
+@Sharable
 @Slf4j
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
@@ -29,7 +31,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+    protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
         HttpMethod method = request.method();
         String uri = request.uri();
         boolean keepAlive = HttpUtil.isKeepAlive(request);
@@ -77,13 +79,14 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     private void sendMessage(ChannelHandlerContext ctx, boolean keepAlive, String key, String message) {
         if (message == null || message.length() == 0) {
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.BAD_REQUEST);
-        }
-        Channel channel = ChannelManager.get(key);
-        if (channel == null) {
-            HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
         } else {
-            channel.writeAndFlush(new TextWebSocketFrame(message));
-            HttpResponseUtil.respond204(ctx, keepAlive);
+            Channel channel = ChannelManager.get(key);
+            if (channel == null) {
+                HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
+            } else {
+                channel.writeAndFlush(new TextWebSocketFrame(message));
+                HttpResponseUtil.respond204(ctx, keepAlive);
+            }
         }
     }
 

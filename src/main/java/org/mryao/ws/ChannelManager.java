@@ -29,6 +29,7 @@ public class ChannelManager {
         return null;
     }
 
+    @Deprecated
     public static Channel remove(String key) {
         return channels.remove(key);
     }
@@ -43,5 +44,4 @@ public class ChannelManager {
         }
         return null;
     }
-
 }
