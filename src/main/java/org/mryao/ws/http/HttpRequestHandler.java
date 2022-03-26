@@ -1,6 +1,6 @@
 package org.mryao.ws.http;
 
-import static org.mryao.ws.ChannelManager.KEY_PATTERN;
+import static org.mryao.ws.util.IdUtil.KEY_PATTERN;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
@@ -11,7 +11,6 @@ import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
 import org.mryao.ws.MessageTypeEnum;
@@ -23,11 +22,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 
     private final String channelUriPrefix;
 
-    private final Pattern channelUriPattern;
+    private final String channelUriPattern;
 
     public HttpRequestHandler(String channelUriPrefix) {
         this.channelUriPrefix = channelUriPrefix;
-        this.channelUriPattern = Pattern.compile(channelUriPrefix + KEY_PATTERN);
+        this.channelUriPattern = channelUriPrefix + KEY_PATTERN;
     }
 
     @Override
@@ -38,18 +37,18 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         if (!request.decoderResult().isSuccess()) {
             // handle bad request
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.BAD_REQUEST);
-        } else if (HttpMethod.GET.equals(method) && channelUriPattern.matcher(uri).matches()) {
+        } else if (HttpMethod.GET.equals(method) && uri.matches(channelUriPattern)) {
             // check channel
             log.info("channelRead {} {} {}", method, uri, keepAlive);
             String key = getChannelKeyFromUri(uri);
             checkChannel(ctx, keepAlive, key);
-        } else if (HttpMethod.POST.equals(method) && channelUriPattern.matcher(uri).matches()) {
+        } else if (HttpMethod.POST.equals(method) && uri.matches(channelUriPattern)) {
             // send message
             String payload = request.content().toString(StandardCharsets.UTF_8);
             log.info("channelRead {} {} {} {}", method, uri, keepAlive, payload);
             String key = getChannelKeyFromUri(uri);
             sendMessage(ctx, keepAlive, key, payload);
-        } else if (HttpMethod.DELETE.equals(method) && channelUriPattern.matcher(uri).matches()) {
+        } else if (HttpMethod.DELETE.equals(method) && uri.matches(channelUriPattern)) {
             // close channel
             log.info("channelRead {} {} {}", method, uri, keepAlive);
             String key = getChannelKeyFromUri(uri);

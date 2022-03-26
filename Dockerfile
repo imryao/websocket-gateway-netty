@@ -1,3 +1,8 @@
+#FROM centos:7
+#RUN echo "ip_resolve=4" >> /etc/yum.conf
+#RUN curl -SL https://download.oracle.com/java/18/latest/jdk-18_linux-x64_bin.rpm -o java-18-openjdk.rpm
+#RUN yum update -y && yum install -y java-18-openjdk.rpm
+
 FROM openjdk:18
 
 # 设置时区。这对于日志、调用链等功能能否在 TSF 控制台被检索到非常重要。

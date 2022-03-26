@@ -66,7 +66,7 @@ public class WebSocketFrameHandler extends SimpleChannelInboundHandler<WebSocket
     @Override
     public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
         if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
-            String key = IdUtil.getRandomString();
+            String key = IdUtil.getRandomKey();
             Channel channel = ctx.channel();
             ChannelManager.put(key, channel);
             ChannelManager.sendMessage(channel, MessageTypeEnum.KEY, key);

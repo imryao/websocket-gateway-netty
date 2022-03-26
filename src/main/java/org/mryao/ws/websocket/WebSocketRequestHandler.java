@@ -41,7 +41,7 @@ public class WebSocketRequestHandler extends SimpleChannelInboundHandler<FullHtt
             ctx.pipeline()
                     .addLast(new WebSocketServerCompressionHandler())
                     .addLast(new WebSocketServerProtocolHandler(websocketPath, null, true))
-                    .addLast(new IdleStateHandler(0, 55, 0, TimeUnit.SECONDS))
+                    .addLast(new IdleStateHandler(0, 50, 0, TimeUnit.SECONDS))
                     .addLast(new WebSocketFrameHandler());
             ctx.fireChannelRead(request.retain());
         } else  {
