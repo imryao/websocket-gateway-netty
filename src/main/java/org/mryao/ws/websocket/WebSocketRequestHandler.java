@@ -35,8 +35,8 @@ public class WebSocketRequestHandler extends SimpleChannelInboundHandler<FullHtt
         if (HttpMethod.HEAD.equals(method) && "/".equals(uri)) {
             // health check
             HttpResponseUtil.respond204(ctx, HttpUtil.isKeepAlive(request));
-        } else if (HttpMethod.GET.equals(method) && websocketPath.equals(uri) && headers.contains(HttpHeaderNames.UPGRADE,
-                HttpHeaderValues.WEBSOCKET, true)) {
+        } else if (HttpMethod.GET.equals(method) && websocketPath.equals(uri) && headers.contains(
+                HttpHeaderNames.UPGRADE, HttpHeaderValues.WEBSOCKET, true)) {
             // websocket handshake
             ctx.pipeline()
                     .addLast(new WebSocketServerCompressionHandler())
@@ -44,7 +44,7 @@ public class WebSocketRequestHandler extends SimpleChannelInboundHandler<FullHtt
                     .addLast(new IdleStateHandler(0, 50, 0, TimeUnit.SECONDS))
                     .addLast(new WebSocketFrameHandler());
             ctx.fireChannelRead(request.retain());
-        } else  {
+        } else {
             // undefined
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
         }
