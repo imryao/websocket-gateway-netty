@@ -1,12 +1,11 @@
 package org.mryao.ws.http;
 
-import static org.mryao.ws.util.IdUtil.KEY_PATTERN;
-
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpUtil;
@@ -15,6 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.ChannelManager;
 import org.mryao.ws.MessageTypeEnum;
 import org.mryao.ws.util.HttpResponseUtil;
+import org.mryao.ws.util.IdUtil;
+import org.mryao.ws.util.JacksonUtil;
+import org.mryao.ws.view.CountResponse;
 
 @Sharable
 @Slf4j
@@ -26,7 +28,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 
     public HttpRequestHandler(String channelUriPrefix) {
         this.channelUriPrefix = channelUriPrefix;
-        this.channelUriPattern = channelUriPrefix + KEY_PATTERN;
+        this.channelUriPattern = String.format("%s/%s", channelUriPrefix, IdUtil.KEY_PATTERN);
     }
 
     @Override
@@ -37,6 +39,9 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         if (!request.decoderResult().isSuccess()) {
             // handle bad request
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.BAD_REQUEST);
+        } else if (HttpMethod.GET.equals(method) && uri.equals("/")) {
+            // health check
+            HttpResponseUtil.respond204(ctx, keepAlive);
         } else if (HttpMethod.GET.equals(method) && uri.matches(channelUriPattern)) {
             // check channel
             log.info("channelRead {} {} {}", method, uri, keepAlive);
@@ -53,6 +58,10 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
             log.info("channelRead {} {} {}", method, uri, keepAlive);
             String key = getChannelKeyFromUri(uri);
             closeChannel(ctx, keepAlive, key);
+        } else if (HttpMethod.GET.equals(method) && uri.equals(channelUriPrefix)) {
+            // get count
+            log.info("channelRead {} {} {}", method, uri, keepAlive);
+            getCount(ctx, keepAlive);
         } else {
             // not found
             log.info("channelRead {} {} {}", method, uri, keepAlive);
@@ -99,7 +108,13 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         }
     }
 
+    private void getCount(ChannelHandlerContext ctx, boolean keepAlive) {
+        int count = ChannelManager.getCount();
+        HttpResponseUtil.respond200(ctx, keepAlive, HttpHeaderValues.APPLICATION_JSON.toString(),
+                JacksonUtil.writeValueAsString(new CountResponse(count)));
+    }
+
     private String getChannelKeyFromUri(String uri) {
-        return uri.substring(channelUriPrefix.length());
+        return uri.substring(channelUriPrefix.length() + 1);
     }
 }

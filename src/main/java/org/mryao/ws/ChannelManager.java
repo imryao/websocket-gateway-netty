@@ -30,6 +30,10 @@ public class ChannelManager {
         return null;
     }
 
+    public static int getCount() {
+        return channels.size();
+    }
+
     @Deprecated
     public static Channel remove(String key) {
         return channels.remove(key);

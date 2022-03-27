@@ -12,7 +12,7 @@ public class GatewayApplication {
         NettyServer wsServer = new NettyServer("ws-server", 8080,
                 new HttpServerInitializer(new WebSocketRequestHandler("/gw")));
         NettyServer httpServer = new NettyServer("http-server", 8081,
-                new HttpServerInitializer(new HttpRequestHandler("/channels/")));
+                new HttpServerInitializer(new HttpRequestHandler("/channels")));
 
         Thread wsThread = new Thread(wsServer::start, "ws-thread");
         Thread httpThread = new Thread(httpServer::start, "http-thread");

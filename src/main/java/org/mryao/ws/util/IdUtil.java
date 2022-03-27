@@ -12,21 +12,22 @@ public class IdUtil {
 
     private static final SecureRandom numberGenerator = new SecureRandom();
 
-    private static int index = -1;
-
-    static {
-        try {
-            String hostName = InetAddress.getLocalHost().getHostName();
-            String[] strings = hostName.split("-");
-            index = Integer.parseInt(strings[strings.length - 1]);
-        } catch (Exception e) {
-            log.error("getHostName error", e);
-        }
-    }
+    private static final int index = getIndex();
 
     public static String getRandomKey() {
         byte[] randomBytes = new byte[18];
         numberGenerator.nextBytes(randomBytes);
         return String.format("%d.%s", index, Base64.getUrlEncoder().encodeToString(randomBytes));
+    }
+
+    private static int getIndex() {
+        try {
+            String hostName = InetAddress.getLocalHost().getHostName();
+            String[] strings = hostName.split("-");
+            return Integer.parseInt(strings[strings.length - 1]);
+        } catch (Exception e) {
+            log.error("getHostName error", e);
+            return -1;
+        }
     }
 }
