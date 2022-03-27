@@ -13,6 +13,8 @@ import io.netty.handler.codec.http.HttpUtil;
 import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
 import io.netty.handler.codec.http.websocketx.extensions.compression.WebSocketServerCompressionHandler;
 import io.netty.handler.timeout.IdleStateHandler;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.mryao.ws.util.HttpResponseUtil;
@@ -20,6 +22,8 @@ import org.mryao.ws.util.HttpResponseUtil;
 @Sharable
 @Slf4j
 public class WebSocketRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+
+    private static final List<String> allowedOrigins = Collections.singletonList("https://open.mryao.ac.cn");
 
     private final String websocketPath;
 
@@ -38,12 +42,17 @@ public class WebSocketRequestHandler extends SimpleChannelInboundHandler<FullHtt
         } else if (HttpMethod.GET.equals(method) && websocketPath.equals(uri) && headers.contains(
                 HttpHeaderNames.UPGRADE, HttpHeaderValues.WEBSOCKET, true)) {
             // websocket handshake
-            ctx.pipeline()
-                    .addLast(new WebSocketServerCompressionHandler())
-                    .addLast(new WebSocketServerProtocolHandler(websocketPath, null, true))
-                    .addLast(new IdleStateHandler(0, 50, 0, TimeUnit.SECONDS))
-                    .addLast(new WebSocketFrameHandler());
-            ctx.fireChannelRead(request.retain());
+            String origin = headers.get(HttpHeaderNames.ORIGIN);
+            if (!allowedOrigins.contains(origin)) {
+                HttpResponseUtil.respondError(ctx, HttpResponseStatus.FORBIDDEN);
+            } else {
+                ctx.pipeline()
+                        .addLast(new WebSocketServerCompressionHandler())
+                        .addLast(new WebSocketServerProtocolHandler(websocketPath, null, true))
+                        .addLast(new IdleStateHandler(0, 50, 0, TimeUnit.SECONDS))
+                        .addLast(new WebSocketFrameHandler());
+                ctx.fireChannelRead(request.retain());
+            }
         } else {
             // undefined
             HttpResponseUtil.respondError(ctx, HttpResponseStatus.NOT_FOUND);
