@@ -6,6 +6,8 @@ import io.netty.channel.ChannelHandler;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -33,7 +35,7 @@ public class NettyServer {
             b
                     .group(bossGroup, workerGroup)
                     .channel(NioServerSocketChannel.class)
-//                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .handler(new LoggingHandler(LogLevel.INFO))
                     .childHandler(childHandler);
 
             Channel ch = b.bind(port).sync().channel();
