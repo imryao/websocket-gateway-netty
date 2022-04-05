@@ -17,4 +17,13 @@ public class JacksonUtil {
             throw new JacksonException("JacksonUtil.writeValueAsString error", e);
         }
     }
+
+    public static <T> T readValue(String content, Class<T> valueType) {
+        try {
+            return objectMapper.readValue(content, valueType);
+        } catch (JsonProcessingException e) {
+            throw new JacksonException("JacksonUtil.readValue error", e);
+        }
+    }
+
 }

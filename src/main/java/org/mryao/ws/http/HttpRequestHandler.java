@@ -17,6 +17,7 @@ import org.mryao.ws.util.HttpResponseUtil;
 import org.mryao.ws.util.IdUtil;
 import org.mryao.ws.util.JacksonUtil;
 import org.mryao.ws.view.CountResponse;
+import org.mryao.ws.view.SendMessageRequest;
 
 @Sharable
 @Slf4j
@@ -50,9 +51,11 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         } else if (HttpMethod.POST.equals(method) && uri.matches(channelUriPattern)) {
             // send message
             String payload = request.content().toString(StandardCharsets.UTF_8);
-            log.info("channelRead {} {} {} {}", method, uri, keepAlive, payload);
+            SendMessageRequest sendMessageRequest = JacksonUtil.readValue(payload, SendMessageRequest.class);
+            String message = sendMessageRequest.getMsg();
+            log.info("channelRead {} {} {} {}", method, uri, keepAlive, message);
             String key = getChannelKeyFromUri(uri);
-            sendMessage(ctx, keepAlive, key, payload);
+            sendMessage(ctx, keepAlive, key, message);
         } else if (HttpMethod.DELETE.equals(method) && uri.matches(channelUriPattern)) {
             // close channel
             log.info("channelRead {} {} {}", method, uri, keepAlive);
